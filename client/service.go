@@ -378,9 +378,10 @@ func (cm *ConnectionManager) OpenConnection() error {
 		}
 		tlsConfig.NextProtos = []string{"frp"}
 
+		addr, port := lookupIP4P(cm.cfg.ServerAddr, cm.cfg.ServerPort)
 		conn, err := quic.DialAddrContext(
 			cm.ctx,
-			net.JoinHostPort(cm.cfg.ServerAddr, strconv.Itoa(cm.cfg.ServerPort)),
+			net.JoinHostPort(addr, strconv.Itoa(port)),
 			tlsConfig, &quic.Config{
 				MaxIdleTimeout:     time.Duration(cm.cfg.QUICMaxIdleTimeout) * time.Second,
 				MaxIncomingStreams: int64(cm.cfg.QUICMaxIncomingStreams),
@@ -491,9 +492,10 @@ func (cm *ConnectionManager) realConnect() (net.Conn, error) {
 		libdial.WithProxy(proxyType, addr),
 		libdial.WithProxyAuth(auth),
 	)
+	addr, port := lookupIP4P(cm.cfg.ServerAddr, cm.cfg.ServerPort)
 	conn, err := libdial.DialContext(
 		cm.ctx,
-		net.JoinHostPort(cm.cfg.ServerAddr, strconv.Itoa(cm.cfg.ServerPort)),
+		net.JoinHostPort(addr, strconv.Itoa(port)),
 		dialOptions...,
 	)
 	return conn, err
