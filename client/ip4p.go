@@ -16,10 +16,26 @@ package client
 
 import (
 	"net"
+	"strconv"
+	"github.com/fatedier/frp/pkg/util/log"
+	"encoding/base64"
+	"context"
 )
 
 func lookupIP4P(addr string, port int) (string, int) {
-	ips, err := net.LookupIP(addr)
+	addrs, err := net.DefaultResolver.LookupTXT(context.Background(),addr)
+  if err == nil {
+    for _, addr_64 := range addrs{
+    	decodeBytes, err := base64.StdEncoding.DecodeString(addr_64)
+    	if err !=nil {	continue }
+    	addr_s, port_s,_ := net.SplitHostPort(string(decodeBytes))
+    	port_i,err := strconv.Atoi(port_s)
+    	if err !=nil {	continue }
+    	return addr_s, port_i
+    }
+  }
+  log.Info("try txt record failed, try ip4p then")
+	ips, err := net.DefaultResolver.LookupIP(context.Background(),"ip6",addr)
 	if err == nil {
 		for _, ip := range ips {
 			if len(ip) == 16 {
@@ -27,10 +43,11 @@ func lookupIP4P(addr string, port int) (string, int) {
 					ip[2] == 0x00 && ip[3] == 0x00 {
 					addr = net.IPv4(ip[12], ip[13], ip[14], ip[15]).String()
 					port = int(ip[10])<<8 | int(ip[11])
-					break
+					return addr, port
 				}
 			}
 		}
 	}
+	log.Info("try ip4p record failed, try normal mode")
 	return addr, port
 }
