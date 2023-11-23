@@ -51,3 +51,4 @@ func lookupIP4P(addr string, port int) (string, int) {
 	log.Info("try ip4p record failed, try normal mode")
 	return addr, port
 }
+
